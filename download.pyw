@@ -8,7 +8,7 @@ def download(accounts):
 def create_update_file(account):
     path = os.path.join(os.getcwd(), account, 'update.py')
     with open(path, 'w+') as update_file:
-        update_file.write("""import os\n\nos.system('instaloader {}')""".format(account))
+        update_file.write("""import os\n\nos.system('instaloader {} --fast-update')""".format(account))
 
 
 root = Tk()

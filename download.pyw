@@ -75,7 +75,8 @@ def top_posts(account, count=5):
 
 root = Tk()
 
-account_name_label = Label(root, text='Enter Account Name or names below').pack()
+account_name_label = Label(root, text='Enter Account Name or names below')
+account_name_label.pack()
 account_name = Entry(root)
 account_name.pack()
 

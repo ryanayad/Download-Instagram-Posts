@@ -3,18 +3,22 @@ import os
 import shutil
 import itertools
 import glob
+from PIL import Image
+from numpy import asarray, array_equal
+import pickle
+
 
 def download(account):
-    command = r"instaloader --post-metadata-txt={likes}" + " " + account
-    print(command)
+    command = r"instaloader --post-metadata-txt={likes} --fast-update" + " " + account + ' ' + r'--filename-pattern={likes}--{shortcode}'
     os.system(command)
-    create_update_file(account)
-    top_posts(account)
+
 
 def create_update_file(account):
     path = os.path.join(os.getcwd(), account, 'update.py')
     with open(path, 'w+') as update_file:
-        update_file.write("""import os\n\nos.system('instaloader {} --fast-update')""".format(account))
+        update_python = """import os\n\nos.system('instaloader {} """.format(account)
+        update_python += r" --post-metadata-txt={likes} --fast-update')"
+        update_file.write(update_python)
 
 def get_text_files(account):
     path = os.path.join(os.getcwd(), account)
@@ -50,7 +54,6 @@ def post_paths(names, account):
         photos = glob.glob(photo_path + '*.jpg')
         for each in photos:
             photo_paths.append(each)
-        #photo_paths.append(os.path.join(path, name + '.jpg'))
     return photo_paths
 
 def build_folder(posts, account):
@@ -64,6 +67,19 @@ def build_folder(posts, account):
     for post in posts:
         shutil.copy2(post, dest)
 
+def likes_dict(account):
+    files = get_text_files(account)
+    likes = {}
+    for file in files:
+        file_name = os.path.basename(file)
+        split = file_name.split('--')
+        like = split[0]
+        name = ''.join(split[1:]).replace('.txt', '')
+        likes[name] = like
+    
+    pickle.dump(likes, open(os.path.join(os.getcwd(), account, 'likes_dict.p'), 'wb'))
+
+
 def top_posts(account, count=5):
     files = get_text_files(account)
     sorted_posts = sort_by_likes(check_likes(files))
@@ -73,17 +89,39 @@ def top_posts(account, count=5):
     posts = post_paths(file_names, account)
     build_folder(posts, account)
 
-root = Tk()
+def process(url):
+    image = Image.open(url)
+    return asarray(image)
 
-account_name_label = Label(root, text='Enter Account Name or names below')
-account_name_label.pack()
-account_name = Entry(root)
-account_name.pack()
+def pickle_data(account):
+    data = []
+    wd = os.path.join(os.getcwd(), account, '')
+    print(wd)
+    posts = glob.glob(wd + '*.jpg')
+    print(posts)
+    for post in posts:
+        data.append(process(post))
+    pickle_file = os.path.join(os.getcwd(), account, 'pickeled posts.p')
+    pickle.dump(data, open(pickle_file, 'wb'))
 
-download_button = Button(root, text='Download Posts', command=lambda:download(account_name.get()))
-download_button.pack()
+def run(account):
+    download(account)
+    create_update_file(account)
+    top_posts(account)
+    pickle_data(account)
 
-#root.bind('<Return>', download(account_name.get()))
+# if __name__ == "__main__":
+#     root = Tk()
 
-root.mainloop() 
+#     account_name_label = Label(root, text='Enter Account Name or names below')
+#     account_name_label.pack()
+#     account_name = Entry(root)
+#     account_name.pack()
+
+#     download_button = Button(root, text='Download Posts', command=lambda:run(account_name.get()))
+#     download_button.pack()
+
+#     #root.bind('<Return>', download(account_name.get()))
+
+#     root.mainloop() 
 
